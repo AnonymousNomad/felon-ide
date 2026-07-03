@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FELON — Universal Model Platform</title>
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #070b15; color: #c8d6e5; min-height: 100vh; overflow-x: hidden;
+    }
+    .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .bg::before {
+        content: ''; position: absolute; width: 800px; height: 800px;
+        border-radius: 50%; top: -300px; left: -200px;
+        background: radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 70%);
+        animation: orb 20s ease-in-out infinite;
+    }
+    .bg::after {
+        content: ''; position: absolute; width: 600px; height: 600px;
+        border-radius: 50%; bottom: -200px; right: -200px;
+        background: radial-gradient(circle, rgba(255,107,53,0.03) 0%, transparent 70%);
+        animation: orb 25s ease-in-out infinite reverse;
+    }
+    @keyframes orb { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-40px) scale(1.05); } }
+
+    .hero { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+    .hero-badge {
+        display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 10px; letter-spacing: 2px;
+        background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.15); color: #00e676;
+        margin-bottom: 24px; text-transform: uppercase;
+    }
+    .hero h1 { font-size: clamp(40px, 8vw, 80px); font-weight: 200; letter-spacing: 12px; color: #00d4ff; line-height: 1; margin-bottom: 12px; }
+    .hero h1 strong { font-weight: 600; }
+    .hero .sub { font-size: clamp(12px, 2vw, 16px); color: rgba(200,214,229,0.25); letter-spacing: 6px; margin-bottom: 32px; }
+    .hero-tagline { font-size: 16px; color: rgba(200,214,229,0.4); max-width: 480px; line-height: 1.6; }
+    .hero-stats { display: flex; gap: 40px; margin: 40px 0; }
+    .hero-stat { text-align: center; }
+    .hero-stat-val { font-size: 32px; font-weight: 200; font-family: 'SF Mono', monospace; }
+    .hero-stat-val.step { color: #00d4ff; }
+    .hero-stat-val.acc { color: #00e676; }
+    .hero-stat-val.loss { color: #ff6b35; }
+    .hero-stat-label { font-size: 9px; letter-spacing: 2px; color: rgba(200,214,229,0.2); text-transform: uppercase; margin-top: 4px; }
+    .progress-wrap { width: 100%; max-width: 400px; margin: 20px 0; }
+    .progress-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.03); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #00d4ff, #00e676); border-radius: 3px; transition: width 2s; }
+    .progress-text { font-size: 10px; color: rgba(200,214,229,0.2); margin-top: 6px; letter-spacing: 1px; }
+    .hero-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+        padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 500;
+        text-decoration: none; transition: all 0.2s; letter-spacing: 1px;
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+    .btn-primary { background: rgba(0,212,255,0.1); color: #00d4ff; border-color: rgba(0,212,255,0.2); }
+    .btn-primary:hover { background: rgba(0,212,255,0.2); }
+    .btn-secondary { background: rgba(255,255,255,0.02); color: rgba(200,214,229,0.6); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.04); color: #c8d6e5; }
+    .btn-sponsor { background: rgba(255,107,53,0.1); color: #ff6b35; border-color: rgba(255,107,53,0.2); }
+    .btn-sponsor:hover { background: rgba(255,107,53,0.2); }
+
+    .section { position: relative; z-index: 1; padding: 80px 40px; max-width: 1000px; margin: 0 auto; }
+    .section-title { font-size: 11px; letter-spacing: 4px; color: rgba(200,214,229,0.2); text-transform: uppercase; margin-bottom: 24px; text-align: center; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .feature {
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
+        border-radius: 10px; padding: 24px; text-align: center;
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .feature-name { font-size: 13px; color: #c8d6e5; margin-bottom: 6px; }
+    .feature-desc { font-size: 11px; color: rgba(200,214,229,0.3); line-height: 1.5; }
+
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+    .principle { text-align: center; padding: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); }
+    .principle h3 { font-size: 12px; letter-spacing: 2px; color: #c8d6e5; margin-bottom: 6px; }
+    .principle p { font-size: 11px; color: rgba(200,214,229,0.25); }
+
+    .footer { text-align: center; padding: 40px; position: relative; z-index: 1; font-size: 10px; color: rgba(200,214,229,0.1); letter-spacing: 1px; border-top: 1px solid rgba(255,255,255,0.02); }
+    .footer-links { display: flex; gap: 16px; justify-content: center; margin-bottom: 12px; }
+    .footer-links a { color: rgba(200,214,229,0.2); text-decoration: none; font-size: 11px; }
+    .footer-links a:hover { color: rgba(200,214,229,0.4); }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<section class="hero">
+    <div class="hero-badge">&#x25CF; Training in Progress</div>
+    <h1><strong>FELON</strong></h1>
+    <div class="sub">UNIVERSAL MODEL PLATFORM</div>
+    <p class="hero-tagline">No cloud. No telemetry. All yours. Open source, MIT.</p>
+    <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-val step" id="h-step">—</div><div class="hero-stat-label">Steps</div></div>
+        <div class="hero-stat"><div class="hero-stat-val acc" id="h-acc">—</div><div class="hero-stat-label">Accuracy</div></div>
+        <div class="hero-stat"><div class="hero-stat-val loss" id="h-loss">—</div><div class="hero-stat-label">Loss</div></div>
+    </div>
+    <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="h-progress" style="width:0%"></div></div>
+        <div class="progress-text" id="h-progress-text">—</div>
+    </div>
+    <div class="hero-actions">
+        <a href="/chat.html" class="btn btn-primary">Try Chat</a>
+        <a href="/dashboard.html" class="btn btn-secondary">Training Dashboard</a>
+        <a href="/" class="btn btn-secondary">IDE</a>
+        <a href="https://github.com/sponsors/AnonymousNomad" class="btn btn-sponsor" target="_blank">Sponsor</a>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-title">Architecture</div>
+    <div class="features">
+        <div class="feature"><div class="feature-icon">&#x1F9E0;</div><div class="feature-name">Q-NFRE Engine</div><div class="feature-desc">Quantum-neural recursive knowledge engine — 67K entries, d_model=768</div></div>
+        <div class="feature"><div class="feature-icon">&#x1F308;</div><div class="feature-name">Chimera Router</div><div class="feature-desc">6-organ neural routing with pheromone reinforcement learning</div></div>
+        <div class="feature"><div class="feature-icon">&#x1F41C;</div><div class="feature-name">Nanobot Swarm</div><div class="feature-desc">1,000 specialist agent slots with replication, freeze, prune lifecycle</div></div>
+        <div class="feature"><div class="feature-icon">&#x1F3ED;</div><div class="feature-name">FsiDeepCore</div><div class="feature-desc">18.43M param transformer — local window + Q-NFRE conditioning</div></div>
+        <div class="feature"><div class="feature-icon">&#x1F430;</div><div class="feature-name">White Rabbit</div><div class="feature-desc">Consent-gated truth-seeking engine for model self-reflection</div></div>
+        <div class="feature"><div class="feature-icon">&#x1F399;</div><div class="feature-name">Voice Assistant</div><div class="feature-desc">On-device STT (Whisper) + TTS (Piper) + intent classification</div></div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-title">Principles</div>
+    <div class="principles">
+        <div class="principle"><h3>&#x1F512; Private</h3><p>Everything runs locally. No data leaves your device.</p></div>
+        <div class="principle"><h3>&#x1F4E1; Offline</h3><p>No internet required. Full functionality without the cloud.</p></div>
+        <div class="principle"><h3>&#x1F4B0; Free</h3><p>Open source MIT. No subscription, no upsells, no tricks.</p></div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-links">
+        <a href="https://github.com/AnonymousNomad/felon-ide">GitHub</a>
+        <a href="https://huggingface.co/spaces/FerrellSyntheticIntelligence/FSI_FELON">Hugging Face</a>
+        <a href="https://github.com/sponsors/AnonymousNomad">Sponsor</a>
+    </div>
+    FELON — Built on consumer hardware. One person. No VC.
+</footer>
+
+<script>
+const MAX = 200000;
+function fmt(n) { return n != null ? n.toLocaleString() : '—'; }
+function pct(n) { return n != null ? (n * 100).toFixed(1) + '%' : '—'; }
+
+async function poll() {
+    try {
+        const r = await fetch('/api/model/status');
+        const d = await r.json();
+        if (d.step) {
+            document.getElementById('h-step').textContent = fmt(d.step);
+            document.getElementById('h-acc').textContent = pct(d.acc);
+            document.getElementById('h-loss').textContent = d.loss != null ? d.loss.toFixed(4) : '—';
+            const p = d.step / MAX;
+            document.getElementById('h-progress').style.width = (p * 100) + '%';
+            document.getElementById('h-progress-text').textContent = `Step ${fmt(d.step)} of ${fmt(MAX)} (${(p*100).toFixed(1)}%)`;
+        }
+    } catch(e) {
+        try {
+            const r = await fetch('/training_status.json');
+            const d = await r.json();
+            if (d.step) {
+                document.getElementById('h-step').textContent = fmt(d.step);
+                document.getElementById('h-progress').style.width = (d.step / MAX * 100) + '%';
+                document.getElementById('h-progress-text').textContent = `Step ${fmt(d.step)} of ${fmt(MAX)} (${(d.step/MAX*100).toFixed(1)}%)`;
+            }
+        } catch(e2) {}
+    }
+}
+poll();
+setInterval(poll, 10000);
+</script>
+</body>
+</html>
