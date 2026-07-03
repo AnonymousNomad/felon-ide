@@ -327,6 +327,7 @@ class APIHandler(SimpleHTTPRequestHandler):
             "/api/status": self._handle_status,
             "/api/stats": self._handle_stats,
             "/api/model/status": self._handle_model_status,
+            "/api/model/history": self._handle_model_history,
             "/api/voice/status": self._handle_voice_status,
             "/api/mesh/identity": self._handle_mesh_identity,
             "/api/mesh/discover": self._handle_mesh_discover,
@@ -411,7 +412,23 @@ class APIHandler(SimpleHTTPRequestHandler):
         if svc and svc.model_service:
             self._send_json(svc.model_service.status())
         else:
-            self._send_json({"loaded": False, "error": "Model service not available"})
+            status = {"loaded": False, "error": "Model service not available"}
+            try:
+                hb = json.load(open("/tmp/opencode/snca/train_heartbeat.json"))
+                status["step"] = hb.get("step", 0)
+                status["loss"] = hb.get("loss", 0)
+                status["acc"] = hb.get("acc", 0)
+                status["q_certainty"] = hb.get("q_certainty", 0)
+                status["chimera_phi"] = hb.get("chimera_phi", 0)
+            except: pass
+            self._send_json(status)
+
+    def _handle_model_history(self):
+        try:
+            hist = json.load(open("/tmp/fsi_felon/felon-ide/training_history.json"))
+            self._send_json(hist)
+        except:
+            self._send_json([])
 
     def _handle_model_chat(self, body):
         svc = self.services
