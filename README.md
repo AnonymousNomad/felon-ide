@@ -1,8 +1,22 @@
 # FELON IDE
 
+> **⚠️ UNDER ACTIVE DEVELOPMENT** — Core model training in progress.
+> [View live training status →](training_status.html)
+
 **Universal Model Platform — Train, chain, deploy any model. Replace VS Code and GitHub.**
 
 A self-contained IDE where any machine learning model can be loaded, trained, fine-tuned, distilled, chained with other models, compiled into Android APKs, and shared over a decentralized P2P network.
+
+## Training Progress
+
+| Metric | Current |
+|--------|---------|
+| Step | 17,850 / 200,000 |
+| Accuracy | 99.48% |
+| Loss | 0.011 |
+| Architecture | FsiDeepCore — 18.43M params |
+| Setup | B=8, T=128, Q-NFRE every 2 steps |
+| Status | Converging, self-healing trainer |
 
 ## Why This Exists
 
@@ -22,7 +36,24 @@ FELON IDE solves all of this in one lightweight, local-first package.
 | **Workshop** | Code editor + Model playground. Write code, load models, train, fine-tune, distill knowledge between models, chain teacher→student training, analyze model internals |
 | **Deep** | Terminal and chat interface. All commands available: build, test, mesh operations, White Rabbit truth-seeking, chimera routing, stats, help |
 | **Mesh** | Decentralized P2P repo network. Init, publish, clone, push, pull repos across nodes. Replace GitHub with a censorship-resistant, offline-capable network |
-| **Device** | Android APK builder. Generate, build, verify, install, and run Android apps from the IDE |
+| **Device** | Android APK builder + Voice Assistant. Generate, build, verify, install, run Android apps, and test voice commands (STT, TTS, intent classification) |
+
+## Voice Assistant (New)
+
+Open-source voice assistant that runs entirely on-device (no cloud, no telemetry).
+
+```
+User → [Wake Word] → [STT: Whisper] → [FELON Core] → [TTS: Piper] → User
+                                ↓
+                        [Q-NFRE Knowledge]
+                                ↓
+                        [Nanobot Tools]
+```
+
+- **STT**: OpenAI Whisper tiny (transformers)
+- **TTS**: Piper TTS
+- **Intent Classification**: 18 pattern types (smart home, knowledge, media, reminders, etc.)
+- **Routing**: Voice commands → intent classification → prompt construction → model inference → response
 
 ## Model Features
 

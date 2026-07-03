@@ -1,0 +1,11 @@
+{
+  "step": 17850,
+  "time": 1783118368.0669484,
+  "loss": 0.011358036473393441,
+  "acc": 0.9948405814170838,
+  "q_certainty": 0.6389986977041776,
+  "chimera_phi": 0.6667,
+  "_max_steps": 200000,
+  "_architecture": "FsiDeepCore \u2014 18.43M params",
+  "_setup": "B=8, T=128, Q-NFRE every 2 steps"
+}

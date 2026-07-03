@@ -7,6 +7,8 @@ import os, sys, json, time, threading, importlib, pkgutil, uuid, hashlib, shutil
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse
 from datetime import datetime
+from ide_model_service import IdeModelService
+from voice_service import VoiceService
 
 CORE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, CORE)
@@ -29,8 +31,12 @@ class CoreServices:
         self.sandbox = None
         self._start_time = time.time()
         self.plugins = {}
+        self.model_service = None
+        self.voice_service = None
         self._load_core()
         self._load_plugins()
+        self._load_model_service()
+        self._load_voice_service()
 
     def _load_core(self):
         try:
@@ -54,6 +60,25 @@ class CoreServices:
             self.sandbox = ExecutionSandbox()
         except Exception as e:
             print(f"[CORE] Sandbox not loaded: {e}")
+
+    def _load_model_service(self):
+        try:
+            self.model_service = IdeModelService(lazy=True)
+            print("[MODEL] Service initialized (lazy load on first request)")
+        except Exception as e:
+            print(f"[MODEL] Service error: {e}")
+            self.model_service = None
+
+    def _load_voice_service(self):
+        try:
+            self.voice_service = VoiceService(model_service=self.model_service)
+            vs = self.voice_service.status()
+            stt = "✓" if vs["supported"]["stt"] else "✗"
+            tts = "✓" if vs["supported"]["tts"] else "✗"
+            print(f"[VOICE] STT={stt} TTS={tts} intents={len(vs['intent_classes'])}")
+        except Exception as e:
+            print(f"[VOICE] Error: {e}")
+            self.voice_service = None
 
     def _load_plugins(self):
         plugins_dir = os.path.join(CORE, "plugins")
@@ -301,6 +326,8 @@ class APIHandler(SimpleHTTPRequestHandler):
         handlers = {
             "/api/status": self._handle_status,
             "/api/stats": self._handle_stats,
+            "/api/model/status": self._handle_model_status,
+            "/api/voice/status": self._handle_voice_status,
             "/api/mesh/identity": self._handle_mesh_identity,
             "/api/mesh/discover": self._handle_mesh_discover,
             "/api/android/env": self._handle_android_env,
@@ -324,6 +351,10 @@ class APIHandler(SimpleHTTPRequestHandler):
         handlers = {
             "/api/command": self._handle_command,
             "/api/build": self._handle_build,
+            "/api/model/infer": self._handle_model_infer,
+            "/api/voice/transcribe": self._handle_voice_transcribe,
+            "/api/voice/synthesize": self._handle_voice_synthesize,
+            "/api/voice/command": self._handle_voice_command,
             "/api/test": self._handle_test,
             "/api/dream": self._handle_dream,
             "/api/mesh/share": self._handle_mesh_share,
@@ -373,6 +404,75 @@ class APIHandler(SimpleHTTPRequestHandler):
             "plugins": len(svc.plugins) if svc else 0,
             "version": "4.0",
         })
+
+    def _handle_model_status(self):
+        svc = self.services
+        if svc and svc.model_service:
+            self._send_json(svc.model_service.status())
+        else:
+            self._send_json({"loaded": False, "error": "Model service not available"})
+
+    def _handle_model_infer(self, body):
+        svc = self.services
+        if not svc or not svc.model_service:
+            self._send_json({"error": "Model service not available"})
+            return
+        prompt = body.get("prompt", "")
+        max_new = int(body.get("max_new", 256))
+        temperature = float(body.get("temperature", 0.7))
+        top_k = int(body.get("top_k", 40))
+        mode = body.get("mode", "plan")
+        result = svc.model_service.infer(prompt, max_new, temperature, top_k, mode)
+        self._send_json(result)
+
+    def _handle_voice_status(self):
+        svc = self.services
+        if svc and svc.voice_service:
+            self._send_json(svc.voice_service.status())
+        else:
+            self._send_json({"supported": {"stt": False, "tts": False, "wake_word": False}, "error": "Voice service not available"})
+
+    def _handle_voice_transcribe(self, body):
+        svc = self.services
+        if not svc or not svc.voice_service:
+            self._send_json({"error": "Voice service not available"})
+            return
+        audio_b64 = body.get("audio", "")
+        import base64
+        audio_bytes = base64.b64decode(audio_b64) if audio_b64 else b""
+        sample_rate = int(body.get("sample_rate", 16000))
+        result = svc.voice_service.transcribe if hasattr(svc.voice_service, 'transcribe') else None
+        if result:
+            self._send_json(result(audio_bytes, sample_rate))
+        else:
+            self._send_json(transcribe(audio_bytes, sample_rate) if 'transcribe' in dir() else {"error": "STT not loaded"})
+
+    def _handle_voice_synthesize(self, body):
+        svc = self.services
+        if not svc or not svc.voice_service:
+            self._send_json({"error": "Voice service not available"})
+            return
+        text = body.get("text", "")
+        result = svc.voice_service.synthesize if hasattr(svc.voice_service, 'synthesize') else None
+        if result:
+            self._send_json(result(text))
+        else:
+            self._send_json(synthesize(text) if 'synthesize' in dir() else {"error": "TTS not loaded"})
+
+    def _handle_voice_command(self, body):
+        svc = self.services
+        text = body.get("text", "")
+        if svc and svc.voice_service:
+            result = svc.voice_service.process_voice_command(text, svc.model_service)
+            self._send_json(result)
+        elif svc and svc.model_service:
+            from voice_service import process_voice_command
+            result = process_voice_command(text, svc.model_service)
+            self._send_json(result)
+        else:
+            from voice_service import process_voice_command
+            result = process_voice_command(text, None)
+            self._send_json(result)
 
     def _handle_command(self, body):
         cmd = body.get("cmd", "").strip()

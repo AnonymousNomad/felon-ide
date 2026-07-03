@@ -66,7 +66,13 @@ def ignite():
                 <div class="editor-actions">
                     <button id="forge-btn" class="btn btn-fire">&#x26A1; Forge It</button>
                     <button id="workshop-run-btn" class="btn btn-primary">&#x25B6; Run</button>
+                    <button id="workshop-gen-btn" class="btn btn-small">&#x1F9E0; Generate</button>
                     <button class="btn" onclick="document.getElementById('code-editor').value = ''">&#x1F5D1; Clear</button>
+                </div>
+                <div class="editor-gen-params" id="editor-gen-params" style="display:none">
+                    <input id="gen-prompt" class="model-input" placeholder="Prompt (leave blank to continue from cursor)" style="flex:1">
+                    <input id="gen-tokens" class="model-input model-input-sm" placeholder="tokens" value="128" style="width:70px">
+                    <input id="gen-temp" class="model-input model-input-sm" placeholder="temp" value="0.7" style="width:60px">
                 </div>
                 <div id="forge-log" class="forge-log">
                     <div class="forge-log-empty">Output appears here.</div>
@@ -196,39 +202,84 @@ def ignite():
             </div>
         </section>
 
-        <!-- Device: Android APK Builder -->
+        <!-- Device: Android APK Builder + Voice Assistant -->
         <section id="panel-device" class="panel">
-            <div class="panel-header">&#x1F4F1; Device — Android APK Builder</div>
-            <div class="device-grid">
-                <div class="device-section" id="device-env">
-                    <div class="device-section-title">Environment</div>
-                    <div class="device-row"><span class="device-label">SDK</span><span class="device-value" id="device-sdk">checking...</span></div>
-                    <div class="device-row"><span class="device-label">ADB</span><span class="device-value" id="device-adb">checking...</span></div>
-                    <div class="device-row"><span class="device-label">Gradle</span><span class="device-value" id="device-gradle">checking...</span></div>
-                    <div class="device-row"><span class="device-label">Devices</span><span class="device-value" id="device-devices">0</span></div>
-                </div>
-                <div class="device-section" id="device-config">
-                    <div class="device-section-title">App Config</div>
-                    <div class="device-field"><span class="device-field-label">App Name</span><input id="device-app-name" class="device-input" value="FelonApp"></div>
-                    <div class="device-field"><span class="device-field-label">Package</span><input id="device-package" class="device-input" value="com.felon.app"></div>
-                    <div class="device-field"><span class="device-field-label">Activity</span><input id="device-activity" class="device-input" value="MainActivity"></div>
-                </div>
-                <div class="device-section" id="device-actions-panel">
-                    <div class="device-section-title">Actions</div>
-                    <div class="device-button-grid">
-                        <button id="device-gen-btn" class="btn device-btn">&#x1F4C2; Generate</button>
-                        <button id="device-build-btn" class="btn btn-fire device-btn">&#x1F525; Build APK</button>
-                        <button id="device-verify-btn" class="btn device-btn" disabled>&#x1F50D; Verify</button>
-                        <button id="device-install-btn" class="btn btn-primary device-btn" disabled>&#x1F4E4; Install</button>
-                        <button id="device-run-btn" class="btn device-btn" disabled>&#x25B6; Run</button>
+            <div class="panel-header">&#x1F4F1; Device — Android + Voice Assistant</div>
+            <div class="device-tabs">
+                <button class="device-tab active" data-device-tab="android">&#x1F916; Android</button>
+                <button class="device-tab" data-device-tab="voice">&#x1F50A; Voice</button>
+            </div>
+            <!-- Android Tab -->
+            <div id="device-tab-android" class="device-tab-content">
+                <div class="device-grid">
+                    <div class="device-section" id="device-env">
+                        <div class="device-section-title">Environment</div>
+                        <div class="device-row"><span class="device-label">SDK</span><span class="device-value" id="device-sdk">checking...</span></div>
+                        <div class="device-row"><span class="device-label">ADB</span><span class="device-value" id="device-adb">checking...</span></div>
+                        <div class="device-row"><span class="device-label">Gradle</span><span class="device-value" id="device-gradle">checking...</span></div>
+                        <div class="device-row"><span class="device-label">Devices</span><span class="device-value" id="device-devices">0</span></div>
+                    </div>
+                    <div class="device-section" id="device-config">
+                        <div class="device-section-title">App Config</div>
+                        <div class="device-field"><span class="device-field-label">App Name</span><input id="device-app-name" class="device-input" value="FelonApp"></div>
+                        <div class="device-field"><span class="device-field-label">Package</span><input id="device-package" class="device-input" value="com.felon.app"></div>
+                        <div class="device-field"><span class="device-field-label">Activity</span><input id="device-activity" class="device-input" value="MainActivity"></div>
+                    </div>
+                    <div class="device-section" id="device-actions-panel">
+                        <div class="device-section-title">Actions</div>
+                        <div class="device-button-grid">
+                            <button id="device-gen-btn" class="btn device-btn">&#x1F4C2; Generate</button>
+                            <button id="device-build-btn" class="btn btn-fire device-btn">&#x1F525; Build APK</button>
+                            <button id="device-verify-btn" class="btn device-btn" disabled>&#x1F50D; Verify</button>
+                            <button id="device-install-btn" class="btn btn-primary device-btn" disabled>&#x1F4E4; Install</button>
+                            <button id="device-run-btn" class="btn device-btn" disabled>&#x25B6; Run</button>
+                        </div>
+                    </div>
+                    <div class="device-section" id="device-output-panel">
+                        <div class="device-section-title">Output</div>
+                        <div id="device-output" class="device-output">
+                            <div class="device-output-empty">Build output appears here.</div>
+                        </div>
+                        <div id="device-verify-output" class="device-verify-output"></div>
                     </div>
                 </div>
-                <div class="device-section" id="device-output-panel">
-                    <div class="device-section-title">Output</div>
-                    <div id="device-output" class="device-output">
-                        <div class="device-output-empty">Build output appears here.</div>
+            </div>
+            <!-- Voice Assistant Tab -->
+            <div id="device-tab-voice" class="device-tab-content" style="display:none">
+                <div class="voice-grid">
+                    <div class="voice-section" id="voice-status-section">
+                        <div class="voice-section-title">Voice Engine</div>
+                        <div class="voice-row"><span class="voice-label">STT (Whisper)</span><span class="voice-value" id="voice-stt">checking...</span></div>
+                        <div class="voice-row"><span class="voice-label">TTS (Piper)</span><span class="voice-value" id="voice-tts">checking...</span></div>
+                        <div class="voice-row"><span class="voice-label">Wake Word</span><span class="voice-value" id="voice-wake">—</span></div>
+                        <div class="voice-row"><span class="voice-label">Intents</span><span class="voice-value" id="voice-intents">0</span></div>
                     </div>
-                    <div id="device-verify-output" class="device-verify-output"></div>
+                    <div class="voice-section" id="voice-command-section">
+                        <div class="voice-section-title">Test Voice Command</div>
+                        <div class="voice-input-row">
+                            <input id="voice-text-input" class="voice-input" placeholder="Type a voice command..." spellcheck="false">
+                            <button id="voice-send-btn" class="btn btn-primary">&#x1F50A; Send</button>
+                        </div>
+                        <div class="voice-intent-display" id="voice-intent-display">
+                            <span class="voice-intent-label">Intent: </span><span class="voice-intent-value" id="voice-intent-value">—</span>
+                        </div>
+                        <div id="voice-response" class="voice-response">
+                            <div class="voice-response-empty">Command response appears here.</div>
+                        </div>
+                    </div>
+                    <div class="voice-section" id="voice-architecture-section">
+                        <div class="voice-section-title">Architecture</div>
+                        <div class="voice-arch-text">
+                        <pre>User &#x2192; [Wake Word] &#x2192; [STT: Whisper] &#x2192; [FELON Core] &#x2192; [TTS: Piper] &#x2192; User
+                                        &#x2193;
+                                [Q-NFRE Knowledge]
+                                        &#x2193;
+                                [Nanobot Tools]</pre>
+                        </div>
+                        <div class="voice-arch-desc">
+                            Fully local. No cloud. No telemetry. Runs on Android via Device panel.
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

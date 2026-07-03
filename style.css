@@ -556,3 +556,69 @@ body::after {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
+
+/* Device tabs */
+.device-tabs {
+    display: flex; gap: 4px; padding: 4px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.device-tab {
+    padding: 4px 12px; font-size: 10px; background: transparent;
+    border: none; color: rgba(200,214,229,0.4); cursor: pointer;
+    border-radius: 4px 4px 0 0; transition: all 0.2s;
+}
+.device-tab:hover { color: rgba(200,214,229,0.7); background: rgba(255,255,255,0.03); }
+.device-tab.active { color: #00d4ff; background: rgba(0,212,255,0.06); }
+
+.device-tab-content { display: flex; flex: 1; overflow: hidden; }
+.device-tab-content#device-tab-android { display: flex; }
+.device-tab-content#device-tab-voice { display: none; }
+
+/* Voice tab */
+.voice-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 8px; padding: 8px; flex: 1; overflow-y: auto;
+}
+.voice-section {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px; padding: 10px;
+}
+.voice-section-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: rgba(200,214,229,0.5); margin-bottom: 8px;
+}
+.voice-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+.voice-label { color: rgba(200,214,229,0.5); }
+.voice-value { color: rgba(200,214,229,0.7); }
+.voice-value.good { color: #00e676; }
+.voice-value.bad { color: #ff1744; }
+.voice-input-row { display: flex; gap: 6px; }
+.voice-input {
+    flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px; padding: 6px 8px; color: #c8d6e5; font-size: 12px;
+    font-family: 'Fira Code', monospace; outline: none;
+}
+.voice-input:focus { border-color: #00d4ff; }
+.voice-intent-display { margin-top: 6px; font-size: 10px; }
+.voice-intent-label { color: rgba(200,214,229,0.4); }
+.voice-intent-value { color: #00d4ff; text-transform: uppercase; letter-spacing: 1px; }
+.voice-response {
+    margin-top: 6px; max-height: 80px; overflow-y: auto;
+    font-size: 11px; line-height: 1.5;
+}
+.voice-response-empty { color: rgba(200,214,229,0.2); font-size: 11px; }
+.voice-response-line { padding: 2px 0; color: rgba(200,214,229,0.8); }
+.voice-response-line.voice-model { color: #00e676; }
+.voice-arch-text pre {
+    font-family: 'Fira Code', monospace; font-size: 10px; line-height: 1.4;
+    color: rgba(200,214,229,0.6);
+}
+.voice-arch-desc {
+    margin-top: 6px; font-size: 10px; color: rgba(200,214,229,0.4);
+    font-style: italic;
+}
+#voice-status-section { grid-column: 1; }
+#voice-command-section { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; }
+#voice-architecture-section { grid-column: 1; }

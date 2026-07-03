@@ -102,6 +102,37 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = false;
     });
 
+    // Generate button
+    document.getElementById('workshop-gen-btn')?.addEventListener('click', async () => {
+        const params = document.getElementById('editor-gen-params');
+        if (params.style.display === 'none') {
+            params.style.display = 'flex';
+            return;
+        }
+        const editor = document.getElementById('code-editor');
+        const prompt = document.getElementById('gen-prompt')?.value?.trim() || (editor?.value || '').slice(-500);
+        const maxNew = parseInt(document.getElementById('gen-tokens')?.value) || 128;
+        const temp = parseFloat(document.getElementById('gen-temp')?.value) || 0.7;
+        const btn = document.getElementById('workshop-gen-btn');
+        btn.textContent = '🧠 Generating...';
+        btn.disabled = true;
+        forgeWrite('[GEN] Generating from prompt...', 'info');
+        forgeWrite('  Model step ' + (await api('/api/model/status')).step || '?', 'info');
+        forgeWrite(`  max_tokens=${maxNew} temp=${temp}`, 'info');
+        const result = await api('/api/model/infer', { prompt, max_new: maxNew, temperature: temp });
+        if (result.output) {
+            forgeWrite('[GEN] Output:', 'info');
+            forgeWrite(result.output.slice(0, 2000), 'train');
+            if (editor) editor.value += '\n' + result.output;
+        } else {
+            forgeWrite('[GEN] Error: ' + (result.error || 'No output'), 'error');
+        }
+        btn.textContent = '🧠 Generate';
+        btn.disabled = false;
+        // Hide params after generation
+        params.style.display = 'none';
+    });
+
     // Run button
     document.getElementById('workshop-run-btn')?.addEventListener('click', () => {
         const code = editor?.value || '';
@@ -187,67 +218,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Train
-    document.getElementById('model-train-btn')?.addEventListener('click', () => {
+    document.getElementById('model-train-btn')?.addEventListener('click', async () => {
         const lr = document.getElementById('model-lr')?.value || '2e-5';
         const epochs = document.getElementById('model-epochs')?.value || '3';
         const batch = document.getElementById('model-batch')?.value || '8';
         logModel('[TRAIN] Starting training...', 'train');
         logModel('  LR: ' + lr + ' | Epochs: ' + epochs + ' | Batch: ' + batch, 'info');
-        // Simulated training
-        let step = 0;
-        const interval = setInterval(() => {
-            step++;
-            const loss = (Math.random() * 0.5 + 0.1).toFixed(4);
-            const acc = (Math.random() * 10 + 85).toFixed(2);
-            logModel('  step ' + step + ' | loss ' + loss + ' | acc ' + acc + '%', step % 5 === 0 ? 'train' : '');
-            if (step >= 10) {
-                clearInterval(interval);
-                logModel('[TRAIN] ✓ Training complete', 'success');
-            }
-        }, 800);
+        logModel('[TRAIN] Check Deep panel or terminal for training status', 'info');
+        const status = await api('/api/model/status');
+        if (status.loaded) {
+            logModel('  Model: step ' + (status.step || '?'), 'info');
+            logModel('  Remaining: ~' + Math.round((200000 - (status.step || 0)) * 9 / 86400) + ' days (CPU)', 'info');
+        } else {
+            logModel('  No model loaded: ' + (status.error || 'unknown'), 'error');
+        }
     });
 
     // Fine-tune
     document.getElementById('model-finetune-btn')?.addEventListener('click', () => {
-        logModel('[FINE-TUNE] Starting fine-tuning...', 'train');
-        setTimeout(() => logModel('[FINE-TUNE] ✓ Fine-tuning complete', 'success'), 3000);
+        logModel('[FINE-TUNE] Fine-tuning via terminal: "train" command in Deep panel', 'info');
+        logModel('[FINE-TUNE] Upload model file and configure params', 'info');
     });
 
     // Distill
     document.getElementById('model-distill-btn')?.addEventListener('click', () => {
-        logModel('[DISTILL] Knowledge distillation: teacher → student', 'train');
-        setTimeout(() => logModel('[DISTILL] ✓ Distillation complete (student accuracy: 92.3%)', 'success'), 2000);
+        logModel('[DISTILL] Distillation requires two models (teacher → student)', 'train');
+        logModel('[DISTILL] Set teacher and student names, then use Chain Train', 'info');
     });
 
     // Analyze/Breakdown
-    document.getElementById('model-breakdown-btn')?.addEventListener('click', () => {
+    document.getElementById('model-breakdown-btn')?.addEventListener('click', async () => {
         logModel('[ANALYZE] Model architecture breakdown...', 'info');
-        setTimeout(() => {
-            logModel('  Layers: 24', 'info');
-            logModel('  Parameters: 7.2B', 'info');
-            logModel('  Embedding dim: 4096', 'info');
-            logModel('  Attention heads: 32', 'info');
-            logModel('  Activation: SwiGLU', 'info');
-            logModel('  Context length: 8192', 'info');
+        const status = await api('/api/model/status');
+        if (status.loaded) {
+            logModel('  Checkpoint step: ' + (status.step || '?'), 'info');
+            logModel('  Architecture: FsiDeepCore', 'info');
+            logModel('  Parameters: 18.43M', 'info');
+            logModel('  Embedding dim: 384', 'info');
+            logModel('  Layers: 10', 'info');
+            logModel('  Attention heads: 6', 'info');
+            logModel('  Context length: 4096', 'info');
+            logModel('  Nanobots: 1000', 'info');
             logModel('[ANALYZE] ✓ Analysis complete', 'success');
-        }, 1000);
+        } else {
+            logModel('[ANALYZE] Model not loaded: ' + (status.error || 'unknown'), 'error');
+        }
     });
 
     // Chain train
     document.getElementById('model-chain-btn')?.addEventListener('click', () => {
         const teacher = document.getElementById('model-teacher')?.value?.trim() || 'teacher';
         const student = document.getElementById('model-student')?.value?.trim() || 'student';
-        logModel('[CHAIN] ' + teacher + ' → ' + student, 'train');
-        let step = 0;
-        const interval = setInterval(() => {
-            step++;
-            const loss = (Math.random() * 0.3 + 0.05).toFixed(4);
-            logModel('  distillation step ' + step + ' | loss ' + loss, step % 3 === 0 ? 'train' : '');
-            if (step >= 6) {
-                clearInterval(interval);
-                logModel('[CHAIN] ✓ ' + student + ' trained from ' + teacher, 'success');
-            }
-        }, 700);
+        logModel('[CHAIN] ' + teacher + ' → ' + student + ' (requires two checkpoint files)', 'train');
+        logModel('[CHAIN] Chain training runs via unified_trainer in terminal', 'info');
+        logModel('[CHAIN] Use "train chain" command or Deep panel', 'info');
     });
 
     // ── Deep: Terminal ──
@@ -549,6 +573,72 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('device-run-btn')?.addEventListener('click', async () => {
         deviceWrite('[RUN] Launching app...', 'info');
         deviceWrite('[RUN] ✓ Launched', 'success');
+    });
+
+    setInterval(pollDevice, 10000);
+
+    // ── Voice Tab ──
+    const deviceTabs = document.querySelectorAll('.device-tab');
+    const deviceTabContents = {
+        android: document.getElementById('device-tab-android'),
+        voice: document.getElementById('device-tab-voice'),
+    };
+
+    deviceTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const mode = tab.dataset.deviceTab;
+            deviceTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            Object.keys(deviceTabContents).forEach(k => {
+                if (deviceTabContents[k]) deviceTabContents[k].style.display = k === mode ? 'flex' : 'none';
+            });
+            if (mode === 'voice') pollVoice();
+        });
+    });
+
+    async function pollVoice() {
+        const status = await api('/api/voice/status');
+        const sttEl = document.getElementById('voice-stt');
+        const ttsEl = document.getElementById('voice-tts');
+        const wakeEl = document.getElementById('voice-wake');
+        const intentsEl = document.getElementById('voice-intents');
+        if (sttEl) sttEl.textContent = status.supported?.stt ? '✓ available' : '✗ not loaded';
+        if (sttEl) sttEl.className = 'voice-value' + (status.supported?.stt ? ' good' : ' bad');
+        if (ttsEl) ttsEl.textContent = status.supported?.tts ? '✓ available' : '✗ not loaded';
+        if (ttsEl) ttsEl.className = 'voice-value' + (status.supported?.tts ? ' good' : ' bad');
+        if (wakeEl) wakeEl.textContent = status.wake_word_model || 'not installed';
+        if (wakeEl) wakeEl.className = 'voice-value' + (status.wake_word_model ? ' good' : '');
+        if (intentsEl) intentsEl.textContent = (status.intent_classes?.length || 0) + ' types';
+    }
+
+    // Voice command input
+    document.getElementById('voice-send-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('voice-text-input');
+        const text = input?.value?.trim();
+        if (!text) return;
+
+        const intentEl = document.getElementById('voice-intent-value');
+        const responseEl = document.getElementById('voice-response');
+        if (responseEl) {
+            if (responseEl.querySelector('.voice-response-empty')) responseEl.innerHTML = '';
+        }
+        if (intentEl) intentEl.textContent = 'processing...';
+
+        const result = await api('/api/voice/command', { text });
+        if (intentEl) intentEl.textContent = result.intent || '—';
+        if (responseEl) {
+            const d = document.createElement('div');
+            d.className = 'voice-response-line';
+            d.textContent = result.response || 'No response';
+            if (result.model_output) d.className += ' voice-model';
+            responseEl.appendChild(d);
+            responseEl.scrollTop = responseEl.scrollHeight;
+        }
+        input.value = '';
+    });
+
+    document.getElementById('voice-text-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('voice-send-btn')?.click();
     });
 
     setInterval(pollDevice, 10000);
