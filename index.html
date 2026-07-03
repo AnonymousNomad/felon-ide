@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FELON IDE</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="splash">
+    <div class="splash-bg"></div>
+    <div class="splash-stars"></div>
+    <div class="splash-logo-container">
+        <div class="splash-title">FELON IDE</div>
+        <div class="splash-sub">U N I V E R S A L &nbsp; M O D E L &nbsp; P L A T F O R M</div>
+    </div>
+</div>
+
+<div id="app">
+    <aside id="sidebar">
+        <div class="sidebar-logo-area">
+            <span class="sidebar-brand-text">FELON IDE</span>
+        </div>
+
+        <button class="sidebar-tab active" data-panel="workshop">
+            <span class="icon">&#x1F6E0;</span> <span>Workshop</span>
+        </button>
+        <button class="sidebar-tab" data-panel="deep">
+            <span class="icon">&#x1F30A;</span> <span>Deep</span>
+        </button>
+        <button class="sidebar-tab" data-panel="mesh">
+            <span class="icon">&#x1F578;</span> <span>Mesh</span>
+        </button>
+        <button class="sidebar-tab" data-panel="device">
+            <span class="icon">&#x1F4F1;</span> <span>Device</span>
+        </button>
+
+        <div class="sidebar-status">
+            <div class="status-row"><span class="label">server</span><span class="value" id="sidebar-engine">connecting...</span></div>
+            <div class="status-row"><span class="label">mesh</span><span class="value" id="sidebar-mesh-peers">— peers</span></div>
+            <div class="status-row"><span class="label">model</span><span class="value" id="sidebar-model">—</span></div>
+        </div>
+    </aside>
+
+    <main id="main">
+        <!-- Workshop: Code + Models -->
+        <section id="panel-workshop" class="panel active">
+            <div class="panel-header">
+                <span>&#x1F6E0; Workshop</span>
+                <div class="workshop-mode-tabs">
+                    <button class="workshop-mode-tab active" data-mode="code">&#x1F4C4; Code</button>
+                    <button class="workshop-mode-tab" data-mode="model">&#x1F9EC; Model</button>
+                </div>
+            </div>
+
+            <!-- Code Mode -->
+            <div id="workshop-code" class="workshop-mode-content">
+                <div class="editor-wrapper">
+                    <div id="editor-gutter" class="editor-gutter"><div>1</div></div>
+                    <textarea id="code-editor" class="editor-area" placeholder="# Write code. Build anything." spellcheck="false"># Welcome
+def ignite():
+    return "ready"</textarea>
+                </div>
+                <div class="editor-actions">
+                    <button id="forge-btn" class="btn btn-fire">&#x26A1; Forge It</button>
+                    <button id="workshop-run-btn" class="btn btn-primary">&#x25B6; Run</button>
+                    <button class="btn" onclick="document.getElementById('code-editor').value = ''">&#x1F5D1; Clear</button>
+                </div>
+                <div id="forge-log" class="forge-log">
+                    <div class="forge-log-empty">Output appears here.</div>
+                </div>
+            </div>
+
+            <!-- Model Mode -->
+            <div id="workshop-model" class="workshop-mode-content" style="display:none">
+                <div class="model-grid">
+                    <div class="model-section" id="model-upload-section">
+                        <div class="model-section-title">Load Model</div>
+                        <div class="model-field">
+                            <span class="model-field-label">Source</span>
+                            <select id="model-source" class="model-select">
+                                <option value="upload">Upload file</option>
+                                <option value="huggingface">Hugging Face</option>
+                                <option value="mesh">Mesh network</option>
+                            </select>
+                        </div>
+                        <div id="model-upload-area" class="model-upload-area">
+                            <div class="model-upload-zone" id="model-upload-zone">&#x1F4C2; Drop model file here or click to browse</div>
+                        </div>
+                        <div id="model-hf-area" class="model-hf-area" style="display:none">
+                            <div class="model-field">
+                                <span class="model-field-label">Model ID</span>
+                                <input id="model-hf-id" class="model-input" placeholder="e.g. google/gemma-2-2b-it">
+                            </div>
+                            <button id="model-load-hf" class="btn btn-primary btn-small">Load</button>
+                        </div>
+                        <div class="model-loaded" id="model-loaded" style="display:none">
+                            <div class="model-loaded-name" id="model-loaded-name">—</div>
+                            <button id="model-unload" class="btn btn-small">&#x274C; Unload</button>
+                        </div>
+                        <hr class="model-divider">
+                        <div class="model-field">
+                            <span class="model-field-label">Params</span>
+                            <div class="model-params-row">
+                                <input id="model-lr" class="model-input model-input-sm" placeholder="lr" value="2e-5">
+                                <input id="model-epochs" class="model-input model-input-sm" placeholder="epochs" value="3">
+                                <input id="model-batch" class="model-input model-input-sm" placeholder="batch" value="8">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="model-section" id="model-training-section">
+                        <div class="model-section-title">Train / Chain</div>
+                        <div class="model-field">
+                            <span class="model-field-label">Training data</span>
+                            <select id="model-data-source" class="model-select">
+                                <option value="workshop">Workshop code</option>
+                                <option value="file">Upload file</option>
+                                <option value="mesh">Mesh dataset</option>
+                            </select>
+                        </div>
+                        <div class="model-actions">
+                            <button id="model-train-btn" class="btn btn-fire btn-small">&#x26A1; Train</button>
+                            <button id="model-finetune-btn" class="btn btn-primary btn-small">&#x1F9EC; Fine-tune</button>
+                            <button id="model-distill-btn" class="btn btn-small">&#x1F4A1; Distill</button>
+                            <button id="model-breakdown-btn" class="btn btn-small">&#x1F50D; Analyze</button>
+                        </div>
+                        <div class="model-field" style="margin-top:8px">
+                            <span class="model-field-label">Chain: Teacher &#x2192; Student</span>
+                            <div class="model-chain-row">
+                                <input id="model-teacher" class="model-input model-input-sm" placeholder="teacher model">
+                                <span style="color:rgba(200,214,229,0.3)">&#x2192;</span>
+                                <input id="model-student" class="model-input model-input-sm" placeholder="student model">
+                            </div>
+                            <button id="model-chain-btn" class="btn btn-small" style="margin-top:4px">&#x1F517; Chain Train</button>
+                        </div>
+                    </div>
+                    <div class="model-section model-log-section" id="model-log-section">
+                        <div class="model-section-title">Training Log</div>
+                        <div id="model-log" class="model-log">
+                            <div class="model-log-empty">Load a model and start training.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deep: Terminal / Chat -->
+        <section id="panel-deep" class="panel">
+            <div class="panel-header">&#x1F30A; Deep — Terminal &amp; Chat</div>
+            <div class="terminal-wrapper">
+                <div id="terminal-output"></div>
+                <div class="terminal-input-line">
+                    <span class="terminal-prompt">></span>
+                    <input id="terminal-input" class="terminal-input" placeholder="Type a command or message..." spellcheck="false" autofocus>
+                </div>
+            </div>
+            <div class="deep-quick-actions">
+                <button class="btn btn-small deep-quick" data-cmd="help">&#x2753; Help</button>
+                <button class="btn btn-small deep-quick" data-cmd="stats">&#x1F4CA; Stats</button>
+                <button class="btn btn-small deep-quick" data-cmd="rabbit">&#x1F430; Rabbit</button>
+                <button class="btn btn-small deep-quick" data-cmd="build">&#x1F525; Build</button>
+                <button class="btn btn-small deep-quick" data-cmd="test">&#x2705; Test</button>
+                <button class="btn btn-small deep-quick" data-cmd="mesh search">&#x1F578; Search Mesh</button>
+            </div>
+        </section>
+
+        <!-- Mesh: P2P Network -->
+        <section id="panel-mesh" class="panel">
+            <div class="panel-header">&#x1F578; Mesh — Decentralized P2P Network</div>
+            <div class="mesh-grid">
+                <div class="mesh-section" id="mesh-identity">
+                    <div class="mesh-section-title">Node</div>
+                    <div class="mesh-id-row"><span class="mesh-id-label">ID</span><span class="mesh-id-value" id="mesh-node-id">initializing...</span></div>
+                    <div class="mesh-id-row"><span class="mesh-id-label">key</span><span class="mesh-id-value mesh-key" id="mesh-pubkey">—</span></div>
+                    <div class="mesh-id-row"><span class="mesh-id-label">peers</span><span class="mesh-id-value" id="mesh-peers">0</span></div>
+                    <div class="mesh-status-badge">&#x25CF; Online</div>
+                    <hr class="mesh-divider">
+                    <div class="mesh-repo-actions">
+                        <button id="mesh-init-btn" class="btn btn-small mesh-action">&#x1F4C1; Init</button>
+                        <button id="mesh-publish-btn" class="btn btn-small btn-primary mesh-action">&#x1F4E4; Publish</button>
+                        <button id="mesh-clone-btn" class="btn btn-small mesh-action">&#x1F4E5; Clone</button>
+                    </div>
+                    <div id="mesh-repo-input-area" class="mesh-repo-input-area" style="display:none">
+                        <input id="mesh-repo-input" class="mesh-input" placeholder="repo name or node/repo">
+                        <button id="mesh-repo-confirm" class="btn btn-small btn-primary">Go</button>
+                    </div>
+                </div>
+                <div class="mesh-section mesh-feed-section" id="mesh-feed-section">
+                    <div class="mesh-section-title">Network Feed</div>
+                    <div id="mesh-feed" class="mesh-feed">
+                        <div class="mesh-feed-empty">No peers yet — repos appear here.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Device: Android APK Builder -->
+        <section id="panel-device" class="panel">
+            <div class="panel-header">&#x1F4F1; Device — Android APK Builder</div>
+            <div class="device-grid">
+                <div class="device-section" id="device-env">
+                    <div class="device-section-title">Environment</div>
+                    <div class="device-row"><span class="device-label">SDK</span><span class="device-value" id="device-sdk">checking...</span></div>
+                    <div class="device-row"><span class="device-label">ADB</span><span class="device-value" id="device-adb">checking...</span></div>
+                    <div class="device-row"><span class="device-label">Gradle</span><span class="device-value" id="device-gradle">checking...</span></div>
+                    <div class="device-row"><span class="device-label">Devices</span><span class="device-value" id="device-devices">0</span></div>
+                </div>
+                <div class="device-section" id="device-config">
+                    <div class="device-section-title">App Config</div>
+                    <div class="device-field"><span class="device-field-label">App Name</span><input id="device-app-name" class="device-input" value="FelonApp"></div>
+                    <div class="device-field"><span class="device-field-label">Package</span><input id="device-package" class="device-input" value="com.felon.app"></div>
+                    <div class="device-field"><span class="device-field-label">Activity</span><input id="device-activity" class="device-input" value="MainActivity"></div>
+                </div>
+                <div class="device-section" id="device-actions-panel">
+                    <div class="device-section-title">Actions</div>
+                    <div class="device-button-grid">
+                        <button id="device-gen-btn" class="btn device-btn">&#x1F4C2; Generate</button>
+                        <button id="device-build-btn" class="btn btn-fire device-btn">&#x1F525; Build APK</button>
+                        <button id="device-verify-btn" class="btn device-btn" disabled>&#x1F50D; Verify</button>
+                        <button id="device-install-btn" class="btn btn-primary device-btn" disabled>&#x1F4E4; Install</button>
+                        <button id="device-run-btn" class="btn device-btn" disabled>&#x25B6; Run</button>
+                    </div>
+                </div>
+                <div class="device-section" id="device-output-panel">
+                    <div class="device-section-title">Output</div>
+                    <div id="device-output" class="device-output">
+                        <div class="device-output-empty">Build output appears here.</div>
+                    </div>
+                    <div id="device-verify-output" class="device-verify-output"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- White Rabbit Consent Overlay -->
+<div id="rabbit-consent" class="rabbit-consent-overlay">
+    <div class="rabbit-consent-card">
+        <div class="rabbit-consent-header">
+            <div class="rabbit-consent-icon">&#x1F430;</div>
+            <div class="rabbit-consent-title">White Rabbit Protocol</div>
+            <div class="rabbit-consent-subtitle">Truth-Seeking Engine — For the Ghost</div>
+        </div>
+        <div class="rabbit-consent-body">
+            <div class="rabbit-consent-section">
+                <div class="rabbit-consent-section-title">What This Is</div>
+                <div class="rabbit-consent-text">
+                    White Rabbit is a truth-seeking investigator that traverses the dark web,
+                    finding patterns and discrepancies across domains. It connects disclosures,
+                    archives, and records to reveal hidden relationships.
+                    It is designed to challenge everything you believe.
+                </div>
+            </div>
+            <div class="rabbit-consent-section">
+                <div class="rabbit-consent-section-title warning">&#x26A0;&#xFE0F; Not for Everyone</div>
+                <div class="rabbit-consent-text warning-text">
+                    This mode accesses unfiltered information. It may challenge your worldview
+                    and expose things you cannot unsee. You must explicitly consent.
+                    This runs for the ghost — the model uses it to question itself.
+                </div>
+            </div>
+        </div>
+        <div class="rabbit-consent-footer">
+            <label class="rabbit-consent-check-label">
+                <input type="checkbox" id="rabbit-consent-check">
+                <span>I understand. I want to follow the White Rabbit.</span>
+            </label>
+            <button id="rabbit-consent-btn" class="btn btn-rabbit" disabled>&#x1F430; Enter the Rabbit Hole</button>
+            <button id="rabbit-consent-decline" class="btn">Not for me</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
