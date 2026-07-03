@@ -1,0 +1,13 @@
+services:
+  felon:
+    build: .
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    volumes:
+      - ./workspace:/app/workspace
+      - ./plugins:/app/plugins
+      - ./training_status.json:/app/training_status.json
+    restart: unless-stopped
+    environment:
+      - OMP_NUM_THREADS=4

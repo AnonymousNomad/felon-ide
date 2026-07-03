@@ -352,6 +352,7 @@ class APIHandler(SimpleHTTPRequestHandler):
             "/api/command": self._handle_command,
             "/api/build": self._handle_build,
             "/api/model/infer": self._handle_model_infer,
+            "/api/model/chat": self._handle_model_chat,
             "/api/voice/transcribe": self._handle_voice_transcribe,
             "/api/voice/synthesize": self._handle_voice_synthesize,
             "/api/voice/command": self._handle_voice_command,
@@ -411,6 +412,34 @@ class APIHandler(SimpleHTTPRequestHandler):
             self._send_json(svc.model_service.status())
         else:
             self._send_json({"loaded": False, "error": "Model service not available"})
+
+    def _handle_model_chat(self, body):
+        svc = self.services
+        if not svc or not svc.model_service:
+            # Fallback: return training status with helpful message
+            status = {"loaded": False, "error": "Model service not available"}
+            try:
+                hb = json.load(open("/tmp/opencode/snca/train_heartbeat.json"))
+                status["step"] = hb.get("step", 0)
+                status["acc"] = hb.get("acc", 0)
+                status["loss"] = hb.get("loss", 0)
+            except: pass
+            self._send_json({
+                "response": f"I'm currently training (step {status.get('step', '?')}, {status.get('acc', 0)*100:.1f}% accuracy). My knowledge base is growing every minute. Ask me again once training reaches 200K steps! In the meantime, check training_status.html for live progress.",
+                "source": "training_status"
+            })
+            return
+        messages = body.get("messages", [])
+        max_new = int(body.get("max_tokens", 256))
+        # Build prompt from messages
+        prompt = ""
+        for m in messages[-6:]:
+            role = m.get("role", "user")
+            content = m.get("content", "")
+            prompt += f"<{role.upper()}>{content}\n"
+        prompt += "<ASSISTANT>"
+        result = svc.model_service.infer(prompt, max_new, 0.7, 40, "plan")
+        self._send_json(result)
 
     def _handle_model_infer(self, body):
         svc = self.services

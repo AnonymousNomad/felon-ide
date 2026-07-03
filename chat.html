@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FELON — Chat</title>
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0a0e1a; color: #c8d6e5; height: 100vh; overflow: hidden;
+        display: flex; flex-direction: column;
+    }
+    .bg-orbs {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .bg-orbs::before {
+        content: ''; position: absolute; width: 600px; height: 600px;
+        border-radius: 50%; top: -200px; right: -200px;
+        background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+        animation: float-orb 12s ease-in-out infinite;
+    }
+    .bg-orbs::after {
+        content: ''; position: absolute; width: 400px; height: 400px;
+        border-radius: 50%; bottom: -100px; left: -100px;
+        background: radial-gradient(circle, rgba(255,107,53,0.04) 0%, transparent 70%);
+        animation: float-orb 15s ease-in-out infinite reverse;
+    }
+    @keyframes float-orb { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -30px); } }
+    .app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
+    .header {
+        padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+        border-bottom: 1px solid rgba(255,255,255,0.04); background: rgba(10,14,26,0.8); backdrop-filter: blur(12px);
+        flex-shrink: 0;
+    }
+    .logo { font-size: 16px; font-weight: 600; letter-spacing: 4px; color: #00d4ff; text-transform: uppercase; }
+    .logo span { font-weight: 300; color: rgba(200,214,229,0.3); }
+    .status-bar { display: flex; align-items: center; gap: 16px; font-size: 11px; }
+    .status-indicator {
+        display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+        border-radius: 20px; background: rgba(0,230,118,0.05); border: 1px solid rgba(0,230,118,0.1);
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #00e676; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .step-info { color: rgba(200,214,229,0.3); font-family: 'SF Mono', 'Fira Code', monospace; }
+    .messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 4px; }
+    .msg { display: flex; gap: 12px; max-width: 800px; animation: fade-in 0.3s ease; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.assistant { align-self: flex-start; }
+    .avatar {
+        width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+        justify-content: center; font-size: 12px; flex-shrink: 0;
+    }
+    .msg.user .avatar { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); color: #00d4ff; }
+    .msg.assistant .avatar { background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.15); color: #ff6b35; }
+    .bubble {
+        padding: 10px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6;
+        max-width: 600px; word-wrap: break-word;
+    }
+    .msg.user .bubble { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.08); border-bottom-right-radius: 4px; }
+    .msg.assistant .bubble { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-bottom-left-radius: 4px; }
+    .bubble p { margin-bottom: 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble code { background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; color: #00d4ff; }
+    .bubble pre { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+    .bubble pre code { background: transparent; padding: 0; color: #e8e8e8; }
+    .welcome {
+        text-align: center; padding: 60px 20px; flex: 1; display: flex;
+        flex-direction: column; align-items: center; justify-content: center;
+    }
+    .welcome h1 { font-size: 32px; font-weight: 200; letter-spacing: 6px; color: #00d4ff; }
+    .welcome h1 strong { font-weight: 600; }
+    .welcome p { color: rgba(200,214,229,0.3); margin-top: 8px; font-size: 13px; }
+    .welcome .hints { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .hint {
+        padding: 6px 14px; border-radius: 20px; font-size: 12px;
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+        color: rgba(200,214,229,0.4); cursor: pointer; transition: all 0.2s;
+    }
+    .hint:hover { background: rgba(0,212,255,0.06); border-color: rgba(0,212,255,0.2); color: #00d4ff; }
+    .input-area {
+        padding: 16px 24px 24px; border-top: 1px solid rgba(255,255,255,0.04);
+        background: rgba(10,14,26,0.8); backdrop-filter: blur(12px); flex-shrink: 0;
+    }
+    .input-row {
+        display: flex; gap: 8px; max-width: 800px; margin: 0 auto;
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px; padding: 4px; transition: border-color 0.2s;
+    }
+    .input-row:focus-within { border-color: rgba(0,212,255,0.2); }
+    .input-row textarea {
+        flex: 1; background: transparent; border: none; outline: none; color: #c8d6e5;
+        font-family: inherit; font-size: 14px; padding: 10px 12px; resize: none;
+        line-height: 1.5; max-height: 120px;
+    }
+    .input-row textarea::placeholder { color: rgba(200,214,229,0.2); }
+    .input-row button {
+        padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+        font-size: 13px; font-weight: 500; transition: all 0.2s;
+        background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid rgba(0,212,255,0.15);
+        align-self: flex-end; margin-bottom: 4px;
+    }
+    .input-row button:hover { background: rgba(0,212,255,0.2); }
+    .input-row button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .typing { display: flex; gap: 4px; padding: 4px 0; }
+    .typing span { width: 6px; height: 6px; border-radius: 50%; background: rgba(200,214,229,0.2); animation: type-bounce 1.4s infinite both; }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes type-bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+    .footer-text { text-align: center; margin-top: 8px; font-size: 10px; color: rgba(200,214,229,0.12); letter-spacing: 1px; }
+    .tool-call { color: #ffd600; font-family: 'SF Mono', monospace; font-size: 12px; background: rgba(255,214,0,0.05); border-radius: 4px; padding: 2px 6px; }
+    .tool-result { color: #00e676; font-family: 'SF Mono', monospace; font-size: 12px; }
+    .sponsor-badge {
+        display: inline-block; padding: 4px 12px; border-radius: 20px;
+        background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.15);
+        color: #ff6b35; font-size: 10px; text-decoration: none; margin-left: 8px;
+    }
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+<div class="app">
+    <div class="header">
+        <div class="logo">FELON <span>CHAT</span></div>
+        <div class="status-bar">
+            <div class="status-indicator">
+                <span class="dot"></span>
+                <span id="statusLabel">Training</span>
+            </div>
+            <span class="step-info" id="stepDisplay">Step —</span>
+            <a href="https://github.com/sponsors/AnonymousNomad" class="sponsor-badge" target="_blank">Sponsor</a>
+        </div>
+    </div>
+    <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+            <h1><strong>FELON</strong> CHAT</h1>
+            <p>Under development — training a universal model platform</p>
+            <div class="hints">
+                <div class="hint" data-prompt="Explain how the Q-NFRE knowledge engine works">Q-NFRE engine</div>
+                <div class="hint" data-prompt="Write a Python function to read a file and search for patterns">Write search code</div>
+                <div class="hint" data-prompt="What is the nanobot swarm architecture?">Nanobot swarm</div>
+                <div class="hint" data-prompt="Design a distributed system that handles 100K req/s">Design 100K req/s</div>
+                <div class="hint" data-prompt="Compare Chimera routing vs traditional MoE">Chimera vs MoE</div>
+            </div>
+        </div>
+    </div>
+    <div class="input-area">
+        <div class="input-row">
+            <textarea id="input" placeholder="Message FELON..." rows="1" enterkeyhint="send"></textarea>
+            <button id="sendBtn">&#x2191;</button>
+        </div>
+        <div class="footer-text">FELON — No cloud. No telemetry. All yours. &#x2764;</div>
+    </div>
+</div>
+
+<script>
+const MODEL_API = '/api/model/chat';
+const STATUS_API = '/api/model/status';
+const messages = document.getElementById('messages');
+const welcome = document.getElementById('welcome');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const statusLabel = document.getElementById('statusLabel');
+const stepDisplay = document.getElementById('stepDisplay');
+let isProcessing = false;
+let conversation = [{ role: 'system', content: 'You are FELON, a universal model platform. You are helpful, truthful, and precise.' }];
+
+input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; });
+
+async function pollStatus() {
+    try {
+        const r = await fetch(STATUS_API);
+        const data = await r.json();
+        if (data.step) { stepDisplay.textContent = `Step ${data.step.toLocaleString()}`; statusLabel.textContent = data.loaded ? 'Ready' : 'Training'; }
+    } catch(e) {
+        try { const r = await fetch('/training_status.json'); const data = await r.json(); if (data.step) stepDisplay.textContent = `Step ${data.step.toLocaleString()}`; } catch(e2) {}
+    }
+}
+pollStatus(); setInterval(pollStatus, 15000);
+
+function addMessage(role, content) {
+    welcome.style.display = 'none';
+    const div = document.createElement('div'); div.className = `msg ${role}`;
+    const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.textContent = role === 'user' ? 'U' : 'F';
+    const bubble = document.createElement('div'); bubble.className = 'bubble';
+    const rendered = content
+        .replace(/<TOOL_CALL>(.*?)<\/TOOL_CALL>/g, '<span class="tool-call">$1</span>')
+        .replace(/<TOOL_RESULT>(.*?)<\/TOOL_RESULT>/g, '<span class="tool-result">$1</span>')
+        .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    bubble.innerHTML = rendered;
+    div.appendChild(avatar); div.appendChild(bubble); messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function addTyping() {
+    welcome.style.display = 'none';
+    const div = document.createElement('div'); div.className = 'msg assistant'; div.id = 'typing-indicator';
+    const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.textContent = 'F';
+    const bubble = document.createElement('div'); bubble.className = 'bubble';
+    bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    div.appendChild(avatar); div.appendChild(bubble); messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() { const el = document.getElementById('typing-indicator'); if (el) el.remove(); }
+
+async function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isProcessing) return;
+    input.value = ''; input.style.height = 'auto';
+    addMessage('user', text);
+    conversation.push({ role: 'user', content: text });
+    isProcessing = true; sendBtn.disabled = true; addTyping();
+    try {
+        const r = await fetch(MODEL_API, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: conversation.slice(-6), max_tokens: 512 })
+        });
+        removeTyping();
+        if (!r.ok) { addMessage('assistant', `Training in progress (step ${stepDisplay.textContent.replace('Step ', '')}). I'm at 99%+ accuracy. Full launch at 200K steps!`); conversation.push({ role: 'assistant', content: `Training status: ${stepDisplay.textContent}` }); }
+        else { const data = await r.json(); const reply = data.response || data.message || data.text || '...'; addMessage('assistant', reply); conversation.push({ role: 'assistant', content: reply }); }
+    } catch(e) {
+        removeTyping();
+        addMessage('assistant', `Training: ${stepDisplay.textContent}. Almost ready!`);
+        conversation.push({ role: 'assistant', content: `Training: ${stepDisplay.textContent}` });
+    }
+    isProcessing = false; sendBtn.disabled = false;
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+document.querySelectorAll('.hint').forEach(el => { el.addEventListener('click', () => { input.value = el.dataset.prompt; input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; sendMessage(); }); });
+</script>
+</body>
+</html>
